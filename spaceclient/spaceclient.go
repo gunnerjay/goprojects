@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	zmq "github.com/pebbe/zmq4"
 	"github.com/veandco/go-sdl2/sdl"
@@ -9,6 +10,8 @@ import (
 
 const windowX int32 = 1024
 const windowY int32 = 768
+
+var delta float64
 
 func main() {
 	requester, _ := zmq.NewSocket(zmq.REQ)
@@ -50,22 +53,38 @@ func main() {
 		return
 	}
 
-	img, err = sdl.LoadBMP("assets/playership.bmp")
+	imgStars, err := sdl.LoadBMP("assets/stars.bmp")
+	if err != nil {
+		fmt.Println("loading stars bitmap: ", err)
+		return
+	}
+	pf, _ := sdl.AllocFormat(sdl.PIXELFORMAT_RGB24)
+	imgStars.SetColorKey(true, sdl.MapRGB(pf, 0, 0, 0))
+
+	starsTex, err := renderer.CreateTextureFromSurface(imgStars)
+	if err != nil {
+		fmt.Println("creating stars texture: ", err)
+		return
+	}
+
+	imgShip, err := sdl.LoadBMP("assets/playership.bmp")
 	if err != nil {
 		fmt.Println("loading ship sprite: ", err)
 		return
 	}
-	pf, _ := sdl.AllocFormat(sdl.PIXELFORMAT_RGB24)
-	img.SetColorKey(true, sdl.MapRGB(pf, 255, 255, 255))
+	//pf, _ := sdl.AllocFormat(sdl.PIXELFORMAT_RGB24)
+	imgShip.SetColorKey(true, sdl.MapRGB(pf, 255, 255, 255))
 
-	playerTex, err := renderer.CreateTextureFromSurface(img)
+	playerTex, err := renderer.CreateTextureFromSurface(imgShip)
 	if err != nil {
 		fmt.Println("creating ship texture: ", err)
 		return
 	}
 
+	var starPos float64 = 3072
 	running := true
 	for running {
+		frameStartTime := time.Now()
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch event.(type) {
 			case *sdl.QuitEvent:
@@ -79,10 +98,22 @@ func main() {
 			&sdl.Rect{X: 0, Y: 0, W: 1024, H: 1024},
 			&sdl.Rect{X: 0, Y: 0, W: 1024, H: 1024})
 
+		starPos -= 0.125
+		var intStarPos int32 = int32(starPos)
+		fmt.Println(delta, starPos, intStarPos)
+		renderer.Copy(starsTex,
+			&sdl.Rect{X: 0, Y: intStarPos, W: 1024, H: 1024},
+			&sdl.Rect{X: 0, Y: 0, W: 1024, H: 1024})
+		if starPos < 1024 {
+			starPos = 3072
+		}
+
 		renderer.Copy(playerTex,
 			&sdl.Rect{X: 0, Y: 0, W: 51, H: 53},
 			&sdl.Rect{X: (windowX - 51) / 2, Y: (windowY - 53) / 2, W: 51, H: 53})
 
 		renderer.Present()
+
+		delta = time.Since(frameStartTime).Seconds() * 60 // targetTicksPerSecond
 	}
 }
