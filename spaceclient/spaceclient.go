@@ -10,8 +10,10 @@ import (
 
 const windowX int32 = 1024
 const windowY int32 = 768
+const targetTicksPerSecond = 60
 
 var delta float64
+var entityList []*entity
 
 func main() {
 	requester, _ := zmq.NewSocket(zmq.REQ)
@@ -67,21 +69,13 @@ func main() {
 		return
 	}
 
-	imgShip, err := sdl.LoadBMP("assets/playership.bmp")
-	if err != nil {
-		fmt.Println("loading ship sprite: ", err)
-		return
-	}
-	//pf, _ := sdl.AllocFormat(sdl.PIXELFORMAT_RGB24)
-	imgShip.SetColorKey(true, sdl.MapRGB(pf, 255, 255, 255))
+	var p = newPlayer(renderer)
+	entityList = append(entityList, p)
 
-	playerTex, err := renderer.CreateTextureFromSurface(imgShip)
-	if err != nil {
-		fmt.Println("creating ship texture: ", err)
-		return
-	}
+	p.position.x = float64((windowX - 51) / 2)
+	p.position.y = float64((windowY - 53) / 2)
 
-	var starPos float64 = 3072
+	var starPos = 4096.0 - float64(windowY)
 	running := true
 	for running {
 		frameStartTime := time.Now()
@@ -94,26 +88,30 @@ func main() {
 			}
 		}
 
-		renderer.Copy(backgroundTex,
-			&sdl.Rect{X: 0, Y: 0, W: 1024, H: 1024},
-			&sdl.Rect{X: 0, Y: 0, W: 1024, H: 1024})
-
-		starPos -= 0.125
-		var intStarPos int32 = int32(starPos)
-		fmt.Println(delta, starPos, intStarPos)
-		renderer.Copy(starsTex,
-			&sdl.Rect{X: 0, Y: intStarPos, W: 1024, H: 1024},
-			&sdl.Rect{X: 0, Y: 0, W: 1024, H: 1024})
-		if starPos < 1024 {
-			starPos = 3072
+		for _, ent := range entityList {
+			ent.update(delta)
 		}
 
-		renderer.Copy(playerTex,
-			&sdl.Rect{X: 0, Y: 0, W: 51, H: 53},
-			&sdl.Rect{X: (windowX - 51) / 2, Y: (windowY - 53) / 2, W: 51, H: 53})
+		renderer.Copy(backgroundTex,
+			&sdl.Rect{X: 0, Y: 0, W: windowX, H: windowY},
+			&sdl.Rect{X: 0, Y: 0, W: windowX, H: windowY})
+
+		starPos -= 0.06
+		var intStarPos = int32(starPos)
+		fmt.Println(delta, starPos, intStarPos)
+		renderer.Copy(starsTex,
+			&sdl.Rect{X: 0, Y: int32(starPos), W: windowX, H: windowY},
+			&sdl.Rect{X: 0, Y: 0, W: windowX, H: windowY})
+		if starPos < 0 {
+			starPos = 4096.0 - float64(windowY)
+		}
+
+		for _, ent := range entityList {
+			ent.draw(renderer, delta)
+		}
 
 		renderer.Present()
 
-		delta = time.Since(frameStartTime).Seconds() * 60 // targetTicksPerSecond
+		delta = time.Since(frameStartTime).Seconds() * targetTicksPerSecond
 	}
 }
