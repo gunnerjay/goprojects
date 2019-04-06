@@ -1,6 +1,5 @@
 - scrolling background needs to be repeating
 - compnents specified by server
-- add movement 
 - user input to accelerate/decelerate
 - support other image types
 - add state system
