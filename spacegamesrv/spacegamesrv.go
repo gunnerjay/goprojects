@@ -14,9 +14,9 @@ import (
 )
 
 func main() {
-	a := StartActor()
-	time.Sleep(time.Second)
-	a.update()
+	var a = galaxy{}
+	a.Init()
+	a.Mailbox() <- payload{msg: "startup"}
 
 	fmt.Println("listening")
 	//  Socket to talk to clients

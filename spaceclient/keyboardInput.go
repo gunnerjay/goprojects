@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -21,6 +22,7 @@ func newKeyboardInput(owner *entity) *keyboardInput {
 func (kInput *keyboardInput) update(delta float64) error {
 	keys := sdl.GetKeyboardState()
 
+	fmt.Println("in keyboard udpate")
 	owner := kInput.owner
 
 	if keys[sdl.SCANCODE_A] == 1 {
